@@ -20,7 +20,7 @@ http.interceptors.request.use(
     config.headers["Accept-Language"] = getLocaleLang();
     const token = getToken();
     if (token) {
-      config.headers["token"] = token;
+      config.headers["Authorization"] = token;
     }
     if (config.method?.toUpperCase() === "GET") {
       config.params = { ...config.params, _t: new Date().getTime() };
@@ -37,8 +37,8 @@ http.interceptors.request.use(
 http.interceptors.response.use(
   (response) => {
     // 响应成功
-    if (response.data.code === 0) {
-      return response;
+    if (response.data.code === 200) {
+      return response.data;
     }
 
     // 错误提示

@@ -42,7 +42,8 @@ export default defineComponent({
       (vl) => {
         if (vl) {
           getUnReadMessageCount();
-          ws();
+          // 禁用websocket
+          // ws();
         }
       }
     );

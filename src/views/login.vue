@@ -17,15 +17,15 @@
           </h4>
 
           <el-form ref="formRef" label-width="80px" :status-icon="true" :model="login" :rules="rules" @keyup.enter="onLogin">
-            <el-form-item label-width="0" prop="username">
-              <el-input v-model="login.username" :placeholder="$t('ui.login.userNamePlaceholder')" prefix-icon="user" autocomplete="off"></el-input>
+            <el-form-item label-width="0" prop="account">
+              <el-input v-model="login.account" :placeholder="$t('ui.login.userNamePlaceholder')" prefix-icon="user" autocomplete="off"></el-input>
             </el-form-item>
             <el-form-item label-width="0" prop="password">
               <el-input :placeholder="$t('ui.login.passwordPlaceholder')" v-model="login.password" prefix-icon="lock" autocomplete="off" show-password></el-input>
             </el-form-item>
-            <el-form-item label-width="0" prop="captcha">
+            <el-form-item label-width="0" prop="verifyCode">
               <el-space class="rr-login-right-main-code">
-                <el-input v-model="login.captcha" :placeholder="$t('ui.login.captchaPlaceholder')" prefix-icon="first-aid-kit"></el-input>
+                <el-input v-model="login.verifyCode" :placeholder="$t('ui.login.captchaPlaceholder')" prefix-icon="first-aid-kit"></el-input>
                 <img style="vertical-align: middle; height: 40px; cursor: pointer" :src="state.captchaUrl" @click="onRefreshCode" alt="" />
               </el-space>
             </el-form-item>
@@ -75,7 +75,7 @@ const state = reactive({
   year: new Date().getFullYear()
 });
 
-const login = reactive({ username: "", password: "", captcha: "", uuid: "" });
+const login = reactive({ account: "", password: "", verifyCode: "", captchaId: "", uuid: "" });
 
 onMounted(() => {
   //清理数据
@@ -85,14 +85,15 @@ onMounted(() => {
 const formRef = ref();
 
 const rules = ref({
-  username: [{ required: true, message: t("validate.required"), trigger: "blur" }],
+  account: [{ required: true, message: t("validate.required"), trigger: "blur" }],
   password: [{ required: true, message: t("validate.required"), trigger: "blur" }],
-  captcha: [{ required: true, message: t("validate.required"), trigger: "blur" }]
+  verifyCode: [{ required: true, message: t("validate.required"), trigger: "blur" }]
 });
 
-const getCaptchaUrl = () => {
-  login.uuid = getUuid();
-  state.captchaUrl = `${app.api}/captcha?uuid=${login.uuid}`;
+const getCaptchaUrl = async () => {
+  const { captchaId, verifyCode }: any = await baseService.get("/user/login/captcha");
+  login.captchaId = captchaId;
+  state.captchaUrl = verifyCode;
 };
 
 const onRefreshCode = () => {
@@ -104,16 +105,12 @@ const onLogin = () => {
     if (valid) {
       state.loading = true;
       baseService
-        .post("/login", login)
-        .then((res) => {
+        .post("/user/login", login)
+        .then((res: any) => {
           state.loading = false;
-          if (res.code === 0) {
-            setCache(CacheToken, res.data, true);
-            ElMessage.success(t("ui.login.loginOk"));
-            router.push("/");
-          } else {
-            ElMessage.error(res.msg);
-          }
+          setCache(CacheToken, res, true);
+          ElMessage.success(t("ui.login.loginOk"));
+          router.push("/");
         })
         .catch(() => {
           state.loading = false;
