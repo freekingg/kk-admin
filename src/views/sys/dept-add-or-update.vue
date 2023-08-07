@@ -4,16 +4,34 @@
       <el-form-item prop="name" :label="$t('dept.name')">
         <el-input v-model="dataForm.name" :placeholder="$t('dept.name')"></el-input>
       </el-form-item>
+      <el-form-item prop="uniqueKey" label="部门标识">
+        <el-input v-model="dataForm.uniqueKey" placeholder="部门标识"></el-input>
+      </el-form-item>
       <el-form-item prop="parentName" :label="$t('dept.parentName')" class="dept-list">
         <el-popover :width="400" ref="deptListPopover" placement="bottom-start" trigger="click" popper-class="popover-pop">
           <template v-slot:reference>
             <el-input v-model="dataForm.parentName" :readonly="true" :placeholder="$t('dept.parentName')">
               <template v-slot:suffix>
-                <el-icon v-if="user.superAdmin === 1 && dataForm.pid !== '0'" @click.stop="deptListTreeSetDefaultHandle()" class="el-input__icon"><circle-close /></el-icon>
+                <el-icon v-if="user.superAdmin === 1 && dataForm.parentId !== '0'" @click.stop="deptListTreeSetDefaultHandle()" class="el-input__icon"><circle-close /></el-icon>
               </template> </el-input
           ></template>
-          <div class="popover-pop-body"><el-tree :data="deptList" :props="{ label: 'name', children: 'children' }" node-key="id" ref="deptListTree" :highlight-current="true" :expand-on-click-node="false" accordion @current-change="deptListTreeCurrentChangeHandle"> </el-tree></div>
+          <div class="popover-pop-body">
+            <el-tree :data="deptList" :props="{ label: 'name', children: 'children' }" node-key="id" ref="deptListTree" :highlight-current="true" :expand-on-click-node="false" accordion @current-change="deptListTreeCurrentChangeHandle" default-expand-all> </el-tree>
+          </div>
         </el-popover>
+      </el-form-item>
+      <el-form-item prop="type" label="类型">
+        <el-select v-model="dataForm.type" style="width: 100%">
+          <el-option label="公司" :value="1" />
+          <el-option label="子公司" :value="2" />
+          <el-option label="部门" :value="3" />
+        </el-select>
+      </el-form-item>
+      <el-form-item prop="fullName" label="部门全称">
+        <el-input v-model="dataForm.fullName" placeholder="部门全称"></el-input>
+      </el-form-item>
+      <el-form-item prop="remark" label="备注">
+        <el-input v-model="dataForm.remark" placeholder="备注"></el-input>
       </el-form-item>
       <el-form-item prop="sort" :label="$t('dept.sort')">
         <el-input-number v-model="dataForm.sort" controls-position="right" :min="0" :label="$t('dept.sort')"></el-input-number>
@@ -31,6 +49,7 @@ import { computed, reactive, ref } from "vue";
 import baseService from "@/service/baseService";
 import { IObject } from "@/types/interface";
 import { useAppStore } from "@/store";
+import { listToTree } from "@/utils/tree";
 import { useI18n } from "vue-i18n";
 import { ElMessage } from "element-plus";
 
@@ -47,8 +66,13 @@ const deptListTree = ref();
 const dataForm = reactive({
   id: "",
   name: "",
-  pid: "",
+  parentId: "",
   parentName: "",
+  uniqueKey: "",
+  fullName: "",
+  remark: "",
+  status: 1,
+  type: 3,
   sort: 0
 });
 
@@ -56,10 +80,12 @@ const user = computed(() => store.state.user);
 
 const rules = ref({
   name: [{ required: true, message: t("validate.required"), trigger: "blur" }],
+  uniqueKey: [{ required: true, message: t("validate.required"), trigger: "blur" }],
+  type: [{ required: true, message: t("validate.required"), trigger: "change" }],
   parentName: [{ required: true, message: t("validate.required"), trigger: "change" }]
 });
 
-const init = (id?: number) => {
+const init = (row?: any) => {
   visible.value = true;
   dataForm.id = "";
 
@@ -69,8 +95,8 @@ const init = (id?: number) => {
   }
 
   getDeptList().then(() => {
-    if (id) {
-      getInfo(id);
+    if (row?.id) {
+      getInfo(row);
     } else if (store.state.user.superAdmin === 1) {
       deptListTreeSetDefaultHandle();
     }
@@ -79,35 +105,30 @@ const init = (id?: number) => {
 
 // 获取部门列表
 const getDeptList = () => {
-  return baseService.get("/sys/dept/list").then((res) => {
-    if (res.code !== 0) {
-      return ElMessage.error(res.msg);
-    }
-    deptList.value = res.data;
+  return baseService.get("/sys/dept/list").then((res: any) => {
+    let list: any = listToTree(res.list as any);
+    deptList.value = list;
   });
 };
 
 // 获取信息
-const getInfo = (id: number) => {
-  baseService.get(`/sys/dept/${id}`).then((res) => {
-    Object.assign(dataForm, res.data);
-
-    if (dataForm.pid === "0") {
-      return deptListTreeSetDefaultHandle();
-    }
-    deptListTree.value.setCurrentKey(dataForm.pid);
-  });
+const getInfo = (row: any = {}) => {
+  Object.assign(dataForm, row);
+  if (+dataForm.parentId === 0) {
+    return deptListTreeSetDefaultHandle();
+  }
+  deptListTree.value.setCurrentKey(dataForm.parentId);
 };
 
 // 上级部门树, 设置默认值
 const deptListTreeSetDefaultHandle = () => {
-  dataForm.pid = "0";
+  dataForm.parentId = 0 as unknown as string;
   dataForm.parentName = t("dept.parentNameDefault");
 };
 
 // 上级部门树, 选中
 const deptListTreeCurrentChangeHandle = (data: IObject) => {
-  dataForm.pid = data.id;
+  dataForm.parentId = data.id;
   dataForm.parentName = data.name;
   deptListPopover.value.hide();
 };
@@ -118,7 +139,9 @@ const dataFormSubmitHandle = () => {
     if (!valid) {
       return false;
     }
-    (!dataForm.id ? baseService.post : baseService.put)("/sys/dept", dataForm).then((res) => {
+
+    const isUpdate = !dataForm.id ? false : true;
+    baseService.post(isUpdate ? "/sys/dept/update" : "/sys/dept/add", dataForm).then((res) => {
       ElMessage.success({
         message: t("prompt.success"),
         duration: 500,
