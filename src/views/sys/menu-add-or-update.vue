@@ -5,6 +5,7 @@
         <el-radio-group v-model="dataForm.menuType" :disabled="!!dataForm.id">
           <el-radio :label="0">{{ $t("menu.type0") }}</el-radio>
           <el-radio :label="1">{{ $t("menu.type1") }}</el-radio>
+          <el-radio :label="2">{{ $t("menu.type2") }}</el-radio>
         </el-radio-group>
       </el-form-item>
       <el-form-item prop="name" :label="$t('menu.name')">
@@ -24,8 +25,11 @@
           </div>
         </el-popover>
       </el-form-item>
-      <el-form-item v-if="dataForm.menuType === 0" prop="url" :label="$t('menu.url')">
-        <el-input v-model="dataForm.url" :placeholder="$t('menu.url')"></el-input>
+      <el-form-item v-if="dataForm.menuType !== 2" prop="router" label="路由">
+        <el-input v-model="dataForm.router" :placeholder="$t('menu.url')"></el-input>
+      </el-form-item>
+      <el-form-item v-if="dataForm.menuType === 1" prop="url" label="视图路径">
+        <el-input v-model="dataForm.url" placeholder="视图路径"></el-input>
       </el-form-item>
       <el-form-item prop="sort" :label="$t('menu.sort')">
         <el-input-number v-model="dataForm.sort" controls-position="right" :min="0" :label="$t('menu.sort')"></el-input-number>
@@ -36,15 +40,25 @@
           <el-radio :label="1">{{ $t("menu.openStyle1") }}</el-radio>
         </el-radio-group>
       </el-form-item>
-      <el-form-item prop="permissions" :label="$t('menu.permissions')">
-        <el-input v-model="dataForm.permissions" :placeholder="$t('menu.permissionsTips')"></el-input>
+      <el-form-item v-if="dataForm.menuType === 1" prop="openStyle" label="状态">
+        <el-radio-group v-model="dataForm.isShow">
+          <el-radio :label="1">显示</el-radio>
+          <el-radio :label="0">不显示</el-radio>
+        </el-radio-group>
+      </el-form-item>
+      <el-form-item v-if="dataForm.menuType === 2" prop="permissions" :label="$t('menu.permissions')">
+        <el-select v-model="dataForm.permissions" multiple filterable allow-create default-first-option :reserve-keyword="false">
+          <el-option v-for="item in permissions" :key="item.value" :label="item.value" :value="item.value" />
+        </el-select>
+
+        <!-- <el-input v-model="dataForm.permissions" :placeholder="$t('menu.permissionsTips')"></el-input> -->
       </el-form-item>
       <el-form-item v-if="dataForm.menuType === 0" prop="icon" :label="$t('menu.icon')" class="icon-list">
         <el-popover ref="iconListPopover" placement="top-start" trigger="click" popper-class="popover-pop mod-sys__menu-icon-popover">
           <template v-slot:reference> <el-input v-model="dataForm.icon" :readonly="true" :placeholder="$t('menu.icon')"></el-input></template>
           <div class="mod-sys__menu-icon-inner">
             <div class="mod-sys__menu-icon-list">
-              <el-button v-for="(item, index) in iconList" :key="index" @click="iconListCurrentChangeHandle(item)" :class="{ 'is-active': dataForm.icon === item }">
+              <el-button v-for="(item, index) in props.iconList" :key="index" @click="iconListCurrentChangeHandle(item)" :class="{ 'is-active': dataForm.icon === item }">
                 <svg class="icon-svg" aria-hidden="true"><use :xlink:href="`#${item}`"></use></svg>
               </el-button>
             </div>
@@ -60,24 +74,34 @@
 </template>
 
 <script lang="ts" setup>
-import { reactive, ref } from "vue";
+import { reactive, ref, computed } from "vue";
 import baseService from "@/service/baseService";
-import { getIconList } from "@/utils/utils";
 import { IObject } from "@/types/interface";
 import { useI18n } from "vue-i18n";
 import { ElMessage } from "element-plus";
+const props = defineProps({
+  menuList: {
+    type: Array,
+    default: () => []
+  },
+  iconList: {
+    type: Array,
+    default: () => []
+  }
+});
 
 const { t } = useI18n();
 
 const emit = defineEmits(["refreshDataList"]);
 
 const visible = ref(false);
-const menuList = ref([]);
-const iconList = ref<string[]>([]);
 const dataFormRef = ref();
 const menuListTree = ref();
 const menuListPopover = ref();
 const iconListPopover = ref();
+
+const menuList = computed(() => props.menuList);
+const permissions: any = ref([]);
 
 const dataForm = reactive({
   id: "",
@@ -89,15 +113,18 @@ const dataForm = reactive({
   permissions: "",
   sort: 0,
   icon: "",
-  openStyle: 0
+  router: "",
+  openStyle: 0,
+  isShow: 1
 });
 
 const rules = ref({
   name: [{ required: true, message: t("validate.required"), trigger: "blur" }],
+  router: [{ required: true, message: t("validate.required"), trigger: "blur" }],
   parentName: [{ required: true, message: t("validate.required"), trigger: "change" }]
 });
 
-const init = (id: number) => {
+const init = (info?: any) => {
   visible.value = true;
   dataForm.id = "";
 
@@ -106,51 +133,37 @@ const init = (id: number) => {
     dataFormRef.value.resetFields();
   }
 
-  iconList.value = getIconList();
-
   dataForm.pid = "0";
   dataForm.parentName = t("menu.parentNameDefault");
+  dataForm.router = "";
+  dataForm.url = "";
 
-  getMenuList().then(() => {
-    if (id) {
-      getInfo(id);
-    }
-  });
+  if (info) {
+    getInfo(info);
+  }
 };
 
 const init2 = (row: IObject) => {
   visible.value = true;
-
   // 重置表单数据
   if (dataFormRef.value) {
     dataFormRef.value.resetFields();
   }
 
-  iconList.value = getIconList();
-
   dataForm.id = "";
   dataForm.pid = row.id;
   dataForm.parentName = row.name;
-
-  getMenuList();
-};
-
-// 获取菜单列表
-const getMenuList = () => {
-  return baseService.get("/sys/menu/list?type=0").then((res) => {
-    menuList.value = res.data;
-  });
 };
 
 // 获取信息
-const getInfo = (id: number) => {
-  baseService.get(`/sys/menu/${id}`).then((res) => {
-    Object.assign(dataForm, res.data);
-    if (dataForm.pid === "0") {
-      return deptListTreeSetDefaultHandle();
-    }
-    menuListTree.value.setCurrentKey(dataForm.pid);
-  });
+const getInfo = (info?: any) => {
+  Object.assign(dataForm, info);
+  if (+dataForm.pid === 0) {
+    return deptListTreeSetDefaultHandle();
+  }
+  if (dataForm.pid) {
+    menuListTree.value?.setCurrentKey(dataForm.pid);
+  }
 };
 
 // 上级菜单树, 设置默认值
@@ -178,7 +191,22 @@ const dataFormSubmitHandle = () => {
     if (!valid) {
       return false;
     }
-    (!dataForm.id ? baseService.post : baseService.put)("/sys/menu", dataForm).then((res) => {
+    let body = {
+      id: dataForm.id || "",
+      name: dataForm.name,
+      parentId: dataForm.pid,
+      type: dataForm.menuType,
+      icon: dataForm.icon,
+      perms: dataForm.permissions || "",
+      router: dataForm.router || "",
+      viewPath: dataForm.url,
+      openStyle: dataForm.openStyle,
+      isShow: dataForm.isShow,
+      orderNum: dataForm.sort
+    };
+    console.log(body);
+    const isUpdate = !dataForm.id ? false : true;
+    baseService.post(isUpdate ? "/sys/perm/menu/update" : "/sys/perm/menu/add", body).then((res) => {
       ElMessage.success({
         message: t("prompt.success"),
         duration: 500,

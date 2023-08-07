@@ -198,3 +198,71 @@ export const getBaseRouteToMeta = (routes: RouteRecordRaw[]): IObject => {
   });
   return routeToMeta;
 };
+
+/**
+ * list转tree格式
+ * @param router
+ * @param routes
+ */
+export const routeToTree = (routes: RouteRecordRaw[]): any => {
+  const groups: any = {};
+  routes.forEach((item: any) => {
+    const { id, parentId } = item;
+    if (parentId === id) {
+      groups[id] = {
+        id,
+        pid: parentId,
+        name: item.name,
+        router: item.router,
+        url: item.viewPath,
+        menuType: item.menuType,
+        openStyle: item.openStyle,
+        icon: item.icon,
+        permissions: item.permissions,
+        sort: item.orderNum,
+        children: []
+      };
+    } else if (groups[parentId]) {
+      groups[parentId].children.push({
+        id,
+        pid: parentId,
+        name: item.name,
+        router: item.router,
+        url: item.viewPath,
+        menuType: item.type,
+        openStyle: item.openStyle,
+        icon: item.icon,
+        sort: item.orderNum
+      });
+    } else {
+      const parent: any = routes.find((p: any) => p.id === parentId);
+      if (parent) {
+        groups[parentId] = {
+          id: parent.id,
+          pid: parent.parentId,
+          name: parent.name,
+          router: parent.router,
+          url: parent.viewPath,
+          menuType: parent.type,
+          openStyle: parent.openStyle,
+          icon: parent.icon,
+          sort: parent.orderNum,
+          children: [
+            {
+              id,
+              pid: parentId,
+              name: item.name,
+              router: item.router,
+              url: item.viewPath,
+              menuType: item.type,
+              openStyle: item.openStyle,
+              icon: item.icon,
+              sort: item.orderNum
+            }
+          ]
+        };
+      }
+    }
+  });
+  return Object.values(groups);
+};

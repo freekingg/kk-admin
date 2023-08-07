@@ -3,7 +3,7 @@ import { IObject } from "@/types/interface";
 import { getSysRouteMap } from "@/router";
 import baseService from "@/service/baseService";
 import { removeCache } from "@/utils/cache";
-import { mergeServerRoute } from "@/utils/router";
+import { mergeServerRoute, routeToTree } from "@/utils/router";
 import { defineStore } from "pinia";
 
 export const useAppStore = defineStore("useAppStore", {
@@ -49,15 +49,17 @@ export const useAppStore = defineStore("useAppStore", {
         baseService.get("/user/permmenu"), //加载菜单
         baseService.get("/user/info"), //加载用户信息
         baseService.get("/config/dict/all") //加载字典
-      ]).then(([menus, user, dicts]) => {
-        if (user.code !== 0) {
-          console.error("初始化用户数据错误", user.msg);
-        }
-        const [routes, routeToMeta] = mergeServerRoute(menus.data || [], getSysRouteMap());
+      ]).then(([permmenu, user, dicts]: any) => {
+        const { menus, perms }: any = permmenu;
+
+        const [routes, routeToMeta] = mergeServerRoute(
+          (routeToTree(menus) as any) || [],
+          getSysRouteMap()
+        );
         this.updateState({
-          // permissions: permissions.data || [],
-          user: user.data || {},
-          dicts: dicts.data || [],
+          permissions: perms || [],
+          user: user || {},
+          dicts: dicts.list || [],
           routeToMeta: routeToMeta || {},
           menus: []
         });

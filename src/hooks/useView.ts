@@ -102,9 +102,9 @@ const useView = (props: IViewHooksOptions | IObject): IViewHooks => {
           limit: state.getDataListIsPage ? state.limit : null,
           ...state.dataForm
         })
-        .then((res) => {
+        .then((res: any) => {
           state.dataListLoading = false;
-          state.dataList = state.getDataListIsPage ? res.data.list : res.data;
+          state.dataList = state.getDataListIsPage ? res.data.list : res.data || res.list;
           state.total = state.getDataListIsPage ? res.data.total : 0;
         })
         .catch(() => {
@@ -164,8 +164,8 @@ const useView = (props: IViewHooksOptions | IObject): IViewHooks => {
         })
           .then(() => {
             baseService
-              .delete(
-                `${state.deleteURL}${state.deleteIsBatch ? "" : "/" + id}`,
+              .post(
+                `${state.deleteURL}`,
                 state.deleteIsBatch
                   ? id
                     ? [id]
@@ -174,7 +174,7 @@ const useView = (props: IViewHooksOptions | IObject): IViewHooks => {
                         (item: IObject) => state.deleteIsBatchKey && item[state.deleteIsBatchKey]
                       )
                     : {}
-                  : {}
+                  : { id }
               )
               .then((res) => {
                 ElMessage.success({
