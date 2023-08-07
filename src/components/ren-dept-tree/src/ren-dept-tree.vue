@@ -73,7 +73,7 @@ const filterNode = (value: string, data: IObject) => {
 
 const getDeptList = (id?: string) => {
   return baseService.get("/sys/dept/list").then((res) => {
-    deptList.value = res.data;
+    deptList.value = res.list;
     nextTick(() => {
       if (id) {
         treeRef.value.setCurrentKey(id);

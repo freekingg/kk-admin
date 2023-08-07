@@ -14,17 +14,10 @@
         <el-button @click="state.getDataList()">{{ $t("query") }}</el-button>
       </el-form-item>
       <el-form-item>
-        <el-button v-if="state.hasPermission('sys:user:save')" type="primary" @click="addOrUpdateHandle()">{{ $t("add") }}</el-button>
-      </el-form-item>
-      <el-form-item>
-        <el-button v-if="state.hasPermission('sys:user:delete')" type="danger" @click="state.deleteHandle()">{{ $t("deleteBatch") }}</el-button>
-      </el-form-item>
-      <el-form-item>
-        <el-button v-if="state.hasPermission('sys:user:export')" type="info" @click="state.exportHandle()">{{ $t("export") }}</el-button>
+        <el-button v-if="state.hasPermission('/sys/user/add')" type="primary" @click="addOrUpdateHandle()">{{ $t("add") }}</el-button>
       </el-form-item>
     </el-form>
     <el-table v-loading="state.dataListLoading" :data="state.dataList" border @selection-change="state.dataListSelectionChangeHandle" @sort-change="state.dataListSortChangeHandle" style="width: 100%">
-      <el-table-column type="selection" header-align="center" align="center" width="50"></el-table-column>
       <el-table-column prop="username" :label="$t('user.username')" sortable="custom" header-align="center" align="center"></el-table-column>
       <el-table-column prop="deptName" :label="$t('user.deptName')" header-align="center" align="center"></el-table-column>
       <el-table-column prop="email" :label="$t('user.email')" header-align="center" align="center"></el-table-column>
@@ -43,8 +36,8 @@
       <el-table-column prop="createDate" :label="$t('user.createDate')" sortable="custom" header-align="center" align="center" width="180"></el-table-column>
       <el-table-column :label="$t('handle')" fixed="right" header-align="center" align="center" width="150">
         <template v-slot="scope">
-          <el-button v-if="state.hasPermission('sys:user:update')" type="primary" link @click="addOrUpdateHandle(scope.row.id)">{{ $t("update") }}</el-button>
-          <el-button v-if="state.hasPermission('sys:user:delete')" type="primary" link @click="state.deleteHandle(scope.row.id)">{{ $t("delete") }}</el-button>
+          <el-button v-if="state.hasPermission('/sys/user/update')" type="primary" link @click="addOrUpdateHandle(scope.row)">{{ $t("update") }}</el-button>
+          <el-button v-if="state.hasPermission('/sys/user/delete')" type="primary" link @click="state.deleteHandle(scope.row.id)">{{ $t("delete") }}</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -62,9 +55,7 @@ import AddOrUpdate from "./user-add-or-update.vue";
 const view = reactive({
   getDataListURL: "/sys/user/page",
   getDataListIsPage: true,
-  deleteURL: "/sys/user",
-  deleteIsBatch: true,
-  exportURL: "/sys/user/export",
+  deleteURL: "/sys/user/delete",
   dataForm: {
     username: "",
     deptId: "",
@@ -76,7 +67,7 @@ const view = reactive({
 const state = reactive({ ...useView(view), ...toRefs(view) });
 
 const addOrUpdateRef = ref();
-const addOrUpdateHandle = (id?: number) => {
-  addOrUpdateRef.value.init(id);
+const addOrUpdateHandle = (row?: any) => {
+  addOrUpdateRef.value.init(row);
 };
 </script>
