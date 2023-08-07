@@ -4,18 +4,22 @@
       <el-form-item prop="name" :label="$t('role.name')">
         <el-input v-model="dataForm.name" :placeholder="$t('role.name')"></el-input>
       </el-form-item>
+      <el-form-item prop="uniqueKey" label="角色标识">
+        <el-input v-model="dataForm.uniqueKey" placeholder="请输入角色标识,拼音或者字母"></el-input>
+      </el-form-item>
       <el-form-item prop="remark" :label="$t('role.remark')">
         <el-input v-model="dataForm.remark" :placeholder="$t('role.remark')"></el-input>
+      </el-form-item>
+      <el-form-item prop="status" label="状态">
+        <el-radio-group v-model="dataForm.status">
+          <el-radio :label="1">开启</el-radio>
+          <el-radio :label="0">禁用</el-radio>
+        </el-radio-group>
       </el-form-item>
       <el-row>
         <el-col :span="12">
           <el-form-item size="small" :label="$t('role.menuList')">
             <el-tree :data="menuList" :props="{ label: 'name', children: 'children' }" node-key="id" ref="menuListTree" accordion show-checkbox> </el-tree>
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item size="small" :label="$t('role.deptList')">
-            <el-tree :data="deptList" :props="{ label: 'name', children: 'children' }" node-key="id" ref="deptListTree" accordion show-checkbox> </el-tree>
           </el-form-item>
         </el-col>
       </el-row>
@@ -38,24 +42,25 @@ const emit = defineEmits(["refreshDataList"]);
 
 const visible = ref(false);
 const menuList = ref([]);
-const deptList = ref([]);
 const dataFormRef = ref();
 const menuListTree = ref();
-const deptListTree = ref();
 
 const dataForm = reactive({
   id: "",
   name: "",
+  parentId: 0,
   menuIdList: [] as IObject[],
-  deptIdList: [],
-  remark: ""
+  remark: "",
+  uniqueKey: "",
+  status: 1
 });
 
 const rules = ref({
-  name: [{ required: true, message: t("validate.required"), trigger: "blur" }]
+  name: [{ required: true, message: t("validate.required"), trigger: "blur" }],
+  uniqueKey: [{ required: true, message: t("validate.required"), trigger: "blur" }]
 });
 
-const init = (id?: number) => {
+const init = (row?: any) => {
   visible.value = true;
   dataForm.id = "";
 
@@ -69,13 +74,9 @@ const init = (id?: number) => {
       menuListTree.value.setCheckedKeys([]);
     }
 
-    if (deptListTree.value) {
-      deptListTree.value.setCheckedKeys([]);
-    }
-
-    Promise.all([getMenuList(), getDeptList()]).then(() => {
-      if (id) {
-        getInfo(id);
+    Promise.all([getMenuList()]).then(() => {
+      if (row?.id) {
+        getInfo(row);
       }
     });
   });
@@ -83,26 +84,17 @@ const init = (id?: number) => {
 
 // 获取菜单列表
 const getMenuList = () => {
-  return baseService.get("/sys/menu/select").then((res) => {
-    menuList.value = res.data;
-  });
-};
-
-// 获取部门列表
-const getDeptList = () => {
-  return baseService.get("/sys/dept/list").then((res) => {
-    deptList.value = res.data;
+  return baseService.get("/sys/perm/menu/list").then((res: any) => {
+    let list1 = transformData(res.list);
+    let list2 = filterMenu(list1);
+    menuList.value = list2;
   });
 };
 
 // 获取信息
-const getInfo = (id: number) => {
-  baseService.get(`/sys/role/${id}`).then((res) => {
-    Object.assign(dataForm, res.data);
-
-    dataForm.menuIdList.forEach((item: IObject) => menuListTree.value.setChecked(item, true));
-    deptListTree.value.setCheckedKeys(dataForm.deptIdList);
-  });
+const getInfo = (row?: any) => {
+  Object.assign(dataForm, row);
+  dataForm.menuIdList.forEach((item: IObject) => menuListTree.value.setChecked(item, true));
 };
 
 // 表单提交
@@ -111,9 +103,14 @@ const dataFormSubmitHandle = () => {
     if (!valid) {
       return false;
     }
-    dataForm.menuIdList = [...menuListTree.value.getHalfCheckedKeys(), ...menuListTree.value.getCheckedKeys()];
-    dataForm.deptIdList = deptListTree.value.getCheckedKeys();
-    (!dataForm.id ? baseService.post : baseService.put)("/sys/role", dataForm).then((res) => {
+    const permMenuIds = [...menuListTree.value.getHalfCheckedKeys(), ...menuListTree.value.getCheckedKeys()];
+    let body = {
+      ...dataForm,
+      permMenuIds
+    };
+    console.log("dataForm: ", dataForm);
+    const isUpdate = !dataForm.id ? false : true;
+    baseService.post(isUpdate ? "sys/role/update" : "sys/role/add", body).then((res) => {
       ElMessage.success({
         message: t("prompt.success"),
         duration: 500,
@@ -124,6 +121,35 @@ const dataFormSubmitHandle = () => {
       });
     });
   });
+};
+
+const transformData = (data: any[] = []) => {
+  let list = data.map((item: any) => {
+    return {
+      id: item.id,
+      pid: item.parentId,
+      name: item.name,
+      router: item.router,
+      url: item.viewPath,
+      menuType: item.type,
+      openStyle: item.openStyle,
+      icon: item.icon,
+      sort: item.orderNum,
+      permissions: item.perms,
+      isShow: item.isShow
+    };
+  });
+  return list;
+};
+
+const filterMenu = (menus: any = [], parentId = 0, menusList = []): any => {
+  menus.forEach((menu: any) => {
+    if (menu.pid === parentId) {
+      menu.children = filterMenu(menus, menu.id);
+      menusList.push(menu as never);
+    }
+  });
+  return menusList;
 };
 
 defineExpose({
