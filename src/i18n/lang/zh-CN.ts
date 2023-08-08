@@ -2,9 +2,9 @@ export default {
   ui: {
     app: {
       //产品信息
-      name: "Financial",
-      productName: "Financial",
-      productNameMini: "Financial",
+      name: "KK ADMIN",
+      productName: "KK ADMIN",
+      productNameMini: "KK ADMIN",
       copyright: location.host
     },
     setting: {

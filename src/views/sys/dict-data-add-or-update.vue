@@ -1,14 +1,20 @@
 <template>
   <el-dialog v-model="visible" :title="!dataForm.id ? $t('add') : $t('update')" :close-on-click-modal="false" :close-on-press-escape="false">
     <el-form :model="dataForm" :rules="rules" ref="dataFormRef" @keyup.enter="dataFormSubmitHandle()" label-width="120px">
-      <el-form-item prop="dictValue" :label="$t('dict.dictValue')">
-        <el-input v-model="dataForm.dictValue" :placeholder="$t('dict.dictValue')"></el-input>
+      <el-form-item prop="value" :label="$t('dict.dictValue')">
+        <el-input v-model="dataForm.value" :placeholder="$t('dict.dictValue')"></el-input>
       </el-form-item>
-      <el-form-item prop="dictLabel" :label="$t('dict.dictLabel')">
-        <el-input v-model="dataForm.dictLabel" :placeholder="$t('dict.dictLabel')"></el-input>
+      <el-form-item prop="name" :label="$t('dict.dictLabel')">
+        <el-input v-model="dataForm.name" :placeholder="$t('dict.dictLabel')"></el-input>
       </el-form-item>
-      <el-form-item prop="sort" :label="$t('dict.sort')">
-        <el-input-number v-model="dataForm.sort" controls-position="right" :min="0" :label="$t('dict.sort')"></el-input-number>
+      <el-form-item prop="status" label="状态">
+        <el-radio-group v-model="dataForm.status">
+          <el-radio :label="1">开启</el-radio>
+          <el-radio :label="0">禁用</el-radio>
+        </el-radio-group>
+      </el-form-item>
+      <el-form-item prop="orderNum" :label="$t('dict.sort')">
+        <el-input-number v-model="dataForm.orderNum" controls-position="right" :min="0" :label="$t('dict.sort')"></el-input-number>
       </el-form-item>
       <el-form-item prop="remark" :label="$t('dict.remark')">
         <el-input v-model="dataForm.remark" :placeholder="$t('dict.remark')"></el-input>
@@ -34,20 +40,22 @@ const dataFormRef = ref();
 
 const dataForm = reactive({
   id: "",
-  dictTypeId: "",
-  dictLabel: "",
-  dictValue: "",
-  sort: 0,
+  parentId: "",
+  name: "",
+  value: "",
+  orderNum: 0,
+  type: 2,
+  status: 1,
   remark: ""
 });
 
 const rules = ref({
-  dictLabel: [{ required: true, message: t("validate.required"), trigger: "blur" }],
-  dictValue: [{ required: true, message: t("validate.required"), trigger: "blur" }],
-  sort: [{ required: true, message: t("validate.required"), trigger: "blur" }]
+  name: [{ required: true, message: t("validate.required"), trigger: "blur" }],
+  value: [{ required: true, message: t("validate.required"), trigger: "blur" }],
+  orderNum: [{ required: true, message: t("validate.required"), trigger: "blur" }]
 });
 
-const init = (id?: number) => {
+const init = (row: any = {}) => {
   visible.value = true;
   dataForm.id = "";
 
@@ -56,16 +64,14 @@ const init = (id?: number) => {
     dataFormRef.value.resetFields();
   }
 
-  if (id) {
-    getInfo(id);
+  if (row.id) {
+    getInfo(row);
   }
 };
 
 // 获取信息
-const getInfo = (id: number) => {
-  baseService.get(`/sys/dict/data/${id}`).then((res) => {
-    Object.assign(dataForm, res.data);
-  });
+const getInfo = (row = {}) => {
+  Object.assign(dataForm, row);
 };
 
 // 表单提交
@@ -74,7 +80,9 @@ const dataFormSubmitHandle = () => {
     if (!valid) {
       return false;
     }
-    (!dataForm.id ? baseService.post : baseService.put)("/sys/dict/data", dataForm).then((res) => {
+
+    const isUpdate = !dataForm.id ? false : true;
+    baseService.post(isUpdate ? "/config/dict/update" : "/config/dict/add", dataForm).then((res) => {
       ElMessage.success({
         message: t("prompt.success"),
         duration: 500,

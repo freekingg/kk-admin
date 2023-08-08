@@ -71,12 +71,12 @@ t.login.username = "用户名";
 t.login.password = "密码";
 t.login.captcha = "验证码";
 t.login.demo = "在线演示";
-t.login.copyright = "Financial";
+t.login.copyright = "KK ADMIN";
 
 t.home = {};
 t.home.sysInfo = {};
 t.home.sysInfo.name = "系统名称";
-t.home.sysInfo.nameVal = "Financial";
+t.home.sysInfo.nameVal = "KK ADMIN";
 t.home.sysInfo.version = "版本信息";
 t.home.sysInfo.versionVal = app.version;
 t.home.sysInfo.osName = "操作系统";

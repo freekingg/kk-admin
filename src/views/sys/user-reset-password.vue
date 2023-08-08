@@ -1,14 +1,8 @@
 <template>
   <el-dialog v-model="visible" :title="!dataForm.id ? $t('add') : $t('update')" :close-on-click-modal="false" :close-on-press-escape="false">
-    <el-form :model="dataForm" :rules="rules" ref="dataFormRef" @keyup.enter="dataFormSubmitHandle()" :label-width="$i18n.locale === 'en-US' ? '120px' : '80px'">
-      <el-form-item :label="$t('post.postName')" prop="name">
-        <el-input v-model="dataForm.name"></el-input>
-      </el-form-item>
-      <el-form-item :label="$t('post.sort')" prop="orderNum">
-        <el-input-number v-model="dataForm.orderNum" :min="0"></el-input-number>
-      </el-form-item>
-      <el-form-item :label="$t('post.status')" prop="status">
-        <ren-radio-group v-model="dataForm.status" dict-type="job_status"></ren-radio-group>
+    <el-form :model="dataForm" :rules="rules" ref="dataFormRef" @keyup.enter="dataFormSubmitHandle()" label-width="120px">
+      <el-form-item prop="password" :label="$t('user.password')" :class="{ 'is-required': !dataForm.id }">
+        <el-input v-model="dataForm.password" type="password" :placeholder="$t('user.password')"></el-input>
       </el-form-item>
     </el-form>
     <template v-slot:footer>
@@ -21,45 +15,34 @@
 <script lang="ts" setup>
 import { reactive, ref } from "vue";
 import baseService from "@/service/baseService";
+import { isEmail, isMobile } from "@/utils/utils";
+import { IObject } from "@/types/interface";
 import { useI18n } from "vue-i18n";
 import { ElMessage } from "element-plus";
 const { t } = useI18n();
 const emit = defineEmits(["refreshDataList"]);
 
 const visible = ref(false);
+const roleList = ref<any[]>([]);
+const postList = ref<any[]>([]);
 const dataFormRef = ref();
 
 const dataForm = reactive({
   id: "",
-  postCode: "",
-  name: "",
-  orderNum: 0,
-  status: 1
+  password: ""
 });
 
 const rules = ref({
-  name: [{ required: true, message: t("validate.required"), trigger: "blur" }],
-  orderNum: [{ required: true, message: t("validate.required"), trigger: "blur" }],
-  status: [{ required: true, message: t("validate.required"), trigger: "blur" }]
+  password: [{ required: true, message: t("validate.required"), trigger: "blur" }]
 });
 
-const init = (row?: any) => {
+const init = (id?: any) => {
   visible.value = true;
-  dataForm.id = "";
-
   // 重置表单数据
   if (dataFormRef.value) {
     dataFormRef.value.resetFields();
   }
-
-  if (row?.id) {
-    getInfo(row);
-  }
-};
-
-// 获取信息
-const getInfo = (row: any) => {
-  Object.assign(dataForm, row);
+  dataForm.id = id;
 };
 
 // 表单提交
@@ -68,8 +51,8 @@ const dataFormSubmitHandle = () => {
     if (!valid) {
       return false;
     }
-    const isUpdate = !dataForm.id ? false : true;
-    baseService.post(isUpdate ? "sys/job/update" : "sys/job/add", dataForm).then((res) => {
+
+    baseService.post("/sys/user/password/update", dataForm).then((res) => {
       ElMessage.success({
         message: t("prompt.success"),
         duration: 500,
@@ -86,3 +69,13 @@ defineExpose({
   init
 });
 </script>
+
+<style lang="less" scoped>
+.mod-sys__user {
+  .role-list {
+    .el-select {
+      width: 100%;
+    }
+  }
+}
+</style>

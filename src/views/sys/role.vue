@@ -35,7 +35,7 @@ import AddOrUpdate from "./role-add-or-update.vue";
 
 const view = reactive({
   getDataListURL: "/sys/role/list",
-  deleteURL: "/sys/role",
+  deleteURL: "/sys/role/delete",
   dataForm: {
     name: ""
   }

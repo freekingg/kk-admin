@@ -1,23 +1,17 @@
 <template>
   <el-dialog v-model="visible" :title="!dataForm.id ? $t('add') : $t('update')" :close-on-click-modal="false" :close-on-press-escape="false">
     <el-form :model="dataForm" :rules="rules" ref="dataFormRef" @keyup.enter="dataFormSubmitHandle()" label-width="120px">
-      <el-form-item prop="username" :label="$t('user.username')">
-        <el-input v-model="dataForm.username" :placeholder="$t('user.username')"></el-input>
+      <el-form-item prop="account" :label="$t('user.username')">
+        <el-input v-model="dataForm.account" :placeholder="$t('user.username')"></el-input>
       </el-form-item>
-      <el-form-item prop="deptName" :label="$t('user.deptName')">
-        <ren-dept-tree v-model="dataForm.deptId" :placeholder="$t('dept.title')" v-model:deptName="dataForm.deptName"></ren-dept-tree>
-      </el-form-item>
-      <el-form-item prop="password" :label="$t('user.password')" :class="{ 'is-required': !dataForm.id }">
-        <el-input v-model="dataForm.password" type="password" :placeholder="$t('user.password')"></el-input>
-      </el-form-item>
-      <el-form-item prop="confirmPassword" :label="$t('user.confirmPassword')" :class="{ 'is-required': !dataForm.id }">
-        <el-input v-model="dataForm.confirmPassword" type="password" :placeholder="$t('user.confirmPassword')"></el-input>
-      </el-form-item>
-      <el-form-item prop="realName" :label="$t('user.realName')">
-        <el-input v-model="dataForm.realName" :placeholder="$t('user.realName')"></el-input>
+      <el-form-item prop="username" :label="$t('user.realName')">
+        <el-input v-model="dataForm.username" :placeholder="$t('user.realName')"></el-input>
       </el-form-item>
       <el-form-item prop="gender" :label="$t('user.gender')">
         <ren-radio-group v-model="dataForm.gender" dict-type="gender"></ren-radio-group>
+      </el-form-item>
+      <el-form-item prop="nickname" label="昵称">
+        <el-input v-model="dataForm.nickname" placeholder="昵称"></el-input>
       </el-form-item>
       <el-form-item prop="email" :label="$t('user.email')">
         <el-input v-model="dataForm.email" :placeholder="$t('user.email')"></el-input>
@@ -25,16 +19,27 @@
       <el-form-item prop="mobile" :label="$t('user.mobile')">
         <el-input v-model="dataForm.mobile" :placeholder="$t('user.mobile')"></el-input>
       </el-form-item>
-      <el-form-item prop="roleIdList" :label="$t('user.roleIdList')" class="role-list">
-        <el-select v-model="dataForm.roleIdList" multiple :placeholder="$t('user.roleIdList')">
+      <el-form-item prop="roleIds" :label="$t('user.roleIdList')" class="role-list">
+        <el-select v-model="dataForm.roleIds" multiple :placeholder="$t('user.roleIdList')">
           <el-option v-for="role in roleList" :key="role.id" :label="role.name" :value="role.id"></el-option>
         </el-select>
       </el-form-item>
-      <el-form-item prop="postIdList" :label="$t('user.postIdList')" class="role-list">
-        <el-select v-model="dataForm.postIdList" multiple :placeholder="$t('user.postIdList')">
-          <el-option v-for="post in postList" :key="post.id" :label="post.postName" :value="post.id"></el-option>
+      <el-form-item prop="deptName" :label="$t('user.deptName')">
+        <ren-dept-tree v-model="dataForm.deptId" :placeholder="$t('dept.title')" v-model:deptName="dataForm.deptName"></ren-dept-tree>
+      </el-form-item>
+      <el-form-item prop="jobId" :label="$t('user.postIdList')" class="role-list">
+        <el-select v-model="dataForm.jobId" :placeholder="$t('user.postIdList')">
+          <el-option v-for="post in postList" :key="post.id" :label="post.name" :value="post.id"></el-option>
         </el-select>
       </el-form-item>
+
+      <!-- <el-form-item prop="password" :label="$t('user.password')" :class="{ 'is-required': !dataForm.id }">
+        <el-input v-model="dataForm.password" type="password" :placeholder="$t('user.password')"></el-input>
+      </el-form-item>
+      <el-form-item prop="confirmPassword" :label="$t('user.confirmPassword')" :class="{ 'is-required': !dataForm.id }">
+        <el-input v-model="dataForm.confirmPassword" type="password" :placeholder="$t('user.confirmPassword')"></el-input>
+      </el-form-item> -->
+
       <el-form-item prop="status" :label="$t('user.status')">
         <el-radio-group v-model="dataForm.status">
           <el-radio :label="0">{{ $t("user.status0") }}</el-radio>
@@ -66,17 +71,18 @@ const dataFormRef = ref();
 
 const dataForm = reactive({
   id: "",
+  account: "",
   username: "",
+  gender: 0,
+  nickname: "",
   deptId: "",
   deptName: "",
   password: "",
   confirmPassword: "",
-  realName: "",
-  gender: 0,
   email: "",
   mobile: "",
-  roleIdList: [] as IObject[],
-  postIdList: [] as IObject[],
+  roleIds: [] as IObject[],
+  jobId: "",
   status: 1
 });
 
@@ -108,16 +114,18 @@ const validateMobile = (rule: any, value: string, callback: (e?: Error) => any):
   callback();
 };
 const rules = ref({
+  account: [{ required: true, message: t("validate.required"), trigger: "blur" }],
   username: [{ required: true, message: t("validate.required"), trigger: "blur" }],
+  roleIds: [{ required: true, message: t("validate.required"), trigger: "change" }],
+  jobId: [{ required: true, message: t("validate.required"), trigger: "change" }],
   deptName: [{ required: true, message: t("validate.required"), trigger: "change" }],
   password: [{ validator: validatePassword, trigger: "blur" }],
   confirmPassword: [{ validator: validateConfirmPassword, trigger: "blur" }],
-  realName: [{ required: true, message: t("validate.required"), trigger: "blur" }],
   email: [{ validator: validateEmail, trigger: "blur" }],
   mobile: [{ validator: validateMobile, trigger: "blur" }]
 });
 
-const init = (id?: number) => {
+const init = (row?: any) => {
   visible.value = true;
   dataForm.id = "";
   dataForm.deptId = "";
@@ -127,32 +135,25 @@ const init = (id?: number) => {
     dataFormRef.value.resetFields();
   }
 
-  Promise.all([getRoleList(), getPostList()]).then(() => {
-    if (id) {
-      getInfo(id);
+  Promise.all([getPostList()]).then(() => {
+    if (row?.id) {
+      getInfo(row);
     }
-  });
-};
-
-// 获取角色列表
-const getRoleList = () => {
-  return baseService.get("/sys/role/list").then((res) => {
-    roleList.value = res.data;
   });
 };
 
 // 获取岗位列表
 const getPostList = () => {
-  return baseService.get("/sys/post/list").then((res) => {
-    postList.value = res.data;
+  return baseService.get("/sys/user/rdpj/info").then((res: any) => {
+    console.log("res: ", res);
+    roleList.value = res.role;
+    postList.value = res.job;
   });
 };
 
 // 获取信息
-const getInfo = (id: number) => {
-  baseService.get(`/sys/user/${id}`).then((res) => {
-    Object.assign(dataForm, res.data);
-  });
+const getInfo = (row: any) => {
+  Object.assign(dataForm, row);
 };
 
 // 表单提交
@@ -161,10 +162,10 @@ const dataFormSubmitHandle = () => {
     if (!valid) {
       return false;
     }
-    (!dataForm.id ? baseService.post : baseService.put)("/sys/user", {
-      ...dataForm,
-      roleIdList: [...dataForm.roleIdList]
-    }).then((res) => {
+
+    const isUpdate = !dataForm.id ? false : true;
+    console.log(dataForm);
+    baseService.post(isUpdate ? "sys/user/update" : "sys/user/add", dataForm).then((res) => {
       ElMessage.success({
         message: t("prompt.success"),
         duration: 500,

@@ -1,14 +1,20 @@
 <template>
   <el-dialog v-model="visible" :title="!dataForm.id ? $t('add') : $t('update')" :close-on-click-modal="false" :close-on-press-escape="false">
     <el-form :model="dataForm" :rules="rules" ref="dataFormRef" @keyup.enter="dataFormSubmitHandle()" label-width="120px">
-      <el-form-item prop="dictName" :label="$t('dict.dictName')">
-        <el-input v-model="dataForm.dictName" :placeholder="$t('dict.dictName')"></el-input>
+      <el-form-item prop="name" :label="$t('dict.dictName')">
+        <el-input v-model="dataForm.name" :placeholder="$t('dict.dictName')"></el-input>
       </el-form-item>
-      <el-form-item prop="dictType" :label="$t('dict.dictType')">
-        <el-input v-model="dataForm.dictType" :placeholder="$t('dict.dictType')"></el-input>
+      <el-form-item prop="uniqueKey" label="标识">
+        <el-input v-model="dataForm.uniqueKey" placeholder="标识"></el-input>
       </el-form-item>
-      <el-form-item prop="sort" :label="$t('dict.sort')">
-        <el-input-number v-model="dataForm.sort" controls-position="right" :min="0" :label="$t('dict.sort')"></el-input-number>
+      <el-form-item prop="status" label="状态">
+        <el-radio-group v-model="dataForm.status">
+          <el-radio :label="1">开启</el-radio>
+          <el-radio :label="0">禁用</el-radio>
+        </el-radio-group>
+      </el-form-item>
+      <el-form-item prop="orderNum" :label="$t('dict.sort')">
+        <el-input-number v-model="dataForm.orderNum" controls-position="right" :min="0" :label="$t('dict.sort')"></el-input-number>
       </el-form-item>
       <el-form-item prop="remark" :label="$t('dict.remark')">
         <el-input v-model="dataForm.remark" :placeholder="$t('dict.remark')"></el-input>
@@ -34,13 +40,17 @@ const dataFormRef = ref();
 
 const dataForm = reactive({
   id: "",
-  dictName: "",
+  name: "",
   dictType: "",
-  sort: 0,
+  uniqueKey: "",
+  parentId: 0,
+  status: 1,
+  orderNum: 0,
+  type: 1,
   remark: ""
 });
 
-const init = (id?: number) => {
+const init = (row: any = {}) => {
   visible.value = true;
   dataForm.id = "";
 
@@ -49,22 +59,21 @@ const init = (id?: number) => {
     dataFormRef.value.resetFields();
   }
 
-  if (id) {
-    getInfo(id);
+  if (row?.id) {
+    getInfo(row);
   }
 };
 
 // 获取信息
-const getInfo = (id: number) => {
-  baseService.get(`/sys/dict/type/${id}`).then((res) => {
-    Object.assign(dataForm, res.data);
-  });
+const getInfo = (row: any) => {
+  Object.assign(dataForm, row);
 };
 
 const rules = ref({
-  dictName: [{ required: true, message: t("validate.required"), trigger: "blur" }],
+  name: [{ required: true, message: t("validate.required"), trigger: "blur" }],
   dictType: [{ required: true, message: t("validate.required"), trigger: "blur" }],
-  sort: [{ required: true, message: t("validate.required"), trigger: "blur" }]
+  uniqueKey: [{ required: true, message: t("validate.required"), trigger: "blur" }],
+  orderNum: [{ required: true, message: t("validate.required"), trigger: "blur" }]
 });
 
 // 表单提交
@@ -73,7 +82,8 @@ const dataFormSubmitHandle = () => {
     if (!valid) {
       return false;
     }
-    (!dataForm.id ? baseService.post : baseService.put)("/sys/dict/type", dataForm).then((res) => {
+    const isUpdate = !dataForm.id ? false : true;
+    baseService.post(isUpdate ? "/config/dict/update" : "/config/dict/add", dataForm).then((res) => {
       ElMessage.success({
         message: t("prompt.success"),
         duration: 500,

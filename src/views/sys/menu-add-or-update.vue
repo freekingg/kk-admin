@@ -34,7 +34,7 @@
       <el-form-item prop="sort" :label="$t('menu.sort')">
         <el-input-number v-model="dataForm.sort" controls-position="right" :min="0" :label="$t('menu.sort')"></el-input-number>
       </el-form-item>
-      <el-form-item v-if="dataForm.menuType === 0" prop="openStyle" :label="$t('menu.openStyle')">
+      <el-form-item v-if="dataForm.menuType === 1" prop="openStyle" :label="$t('menu.openStyle')">
         <el-radio-group v-model="dataForm.openStyle">
           <el-radio :label="0">{{ $t("menu.openStyle0") }}</el-radio>
           <el-radio :label="1">{{ $t("menu.openStyle1") }}</el-radio>
