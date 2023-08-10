@@ -3,8 +3,8 @@
     <el-form-item :label="$t('updatePassword.username')">
       <span>{{ user.username }}</span>
     </el-form-item>
-    <el-form-item prop="password" :label="$t('updatePassword.password')">
-      <el-input v-model="dataForm.password" type="password" :placeholder="$t('updatePassword.password')"></el-input>
+    <el-form-item prop="oldPassword" :label="$t('updatePassword.password')">
+      <el-input v-model="dataForm.oldPassword" type="password" :placeholder="$t('updatePassword.password')"></el-input>
     </el-form-item>
     <el-form-item prop="newPassword" :label="$t('updatePassword.newPassword')">
       <el-input v-model="dataForm.newPassword" type="password" :placeholder="$t('updatePassword.newPassword')"></el-input>
@@ -31,7 +31,7 @@ const router = useRouter();
 
 const dataFormRef = ref();
 const dataForm = reactive({
-  password: "",
+  oldPassword: "",
   newPassword: "",
   confirmPassword: ""
 });
@@ -47,7 +47,7 @@ const validateConfirmPassword = (rule: IObject, value: string, callback: (e?: Er
 };
 
 const rules = ref({
-  password: [{ required: true, message: t("validate.required"), trigger: "blur" }],
+  oldPassword: [{ required: true, message: t("validate.required"), trigger: "blur" }],
   newPassword: [{ required: true, message: t("validate.required"), trigger: "blur" }],
   confirmPassword: [
     { required: true, message: t("validate.required"), trigger: "blur" },
@@ -61,7 +61,7 @@ const dataFormSubmitHandle = () => {
     if (!valid) {
       return false;
     }
-    baseService.put("/sys/user/password", dataForm).then((res) => {
+    baseService.post("/user/password/update", dataForm).then((res) => {
       ElMessage.success({
         message: t("prompt.success"),
         duration: 500,

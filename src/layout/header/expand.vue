@@ -41,7 +41,7 @@ export default defineComponent({
       () => store.state.appIsLogin,
       (vl) => {
         if (vl) {
-          getUnReadMessageCount();
+          // getUnReadMessageCount();
           // 禁用websocket
           // ws();
         }
@@ -101,7 +101,7 @@ export default defineComponent({
           type: "warning"
         })
           .then(() => {
-            baseService.post("/logout").finally(() => {
+            baseService.post("/user/logout").finally(() => {
               router.push(path);
             });
           })

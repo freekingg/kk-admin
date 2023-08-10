@@ -99,7 +99,7 @@ import baseService from "@/service/baseService";
 import { ElMessage } from "element-plus";
 
 onMounted(() => {
-  getSysInfo();
+  // getSysInfo();
 });
 
 const sysInfo = reactive({
@@ -128,7 +128,7 @@ const getSysInfo = () => {
     if (res.code !== 0) {
       return ElMessage.error(res.msg);
     }
-    Object.assign(sysInfo, res.data)
+    Object.assign(sysInfo, res.data);
   });
 };
 </script>
