@@ -90,11 +90,22 @@
         </table>
       </el-col>
     </el-row>
+    <el-card shadow="never" style="margin-top: 10px">
+      <template #header>
+        <h2 style="margin: 0">数据统计</h2>
+      </template>
+      <v-chart :option="bar" :autoresize="true" />
+    </el-card>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { onMounted, reactive } from "vue";
+import { onMounted, reactive, ref, provide } from "vue";
+import { use } from "echarts/core";
+import { CanvasRenderer } from "echarts/renderers";
+import VChart, { THEME_KEY } from "vue-echarts";
+import { BarChart, LineChart, PieChart, MapChart, RadarChart, ScatterChart, EffectScatterChart, LinesChart } from "echarts/charts";
+import { GridComponent, PolarComponent, GeoComponent, TooltipComponent, LegendComponent, TitleComponent, VisualMapComponent, DatasetComponent, ToolboxComponent, DataZoomComponent } from "echarts/components";
 import baseService from "@/service/baseService";
 import { ElMessage } from "element-plus";
 
@@ -131,6 +142,60 @@ const getSysInfo = () => {
     Object.assign(sysInfo, res.data);
   });
 };
+use([BarChart, LineChart, PieChart, MapChart, RadarChart, ScatterChart, EffectScatterChart, LinesChart, GridComponent, PolarComponent, GeoComponent, TooltipComponent, LegendComponent, TitleComponent, VisualMapComponent, DatasetComponent, CanvasRenderer, ToolboxComponent, DataZoomComponent]);
+
+provide(THEME_KEY, "westeros");
+const random = () => {
+  return Math.round(300 + Math.random() * 700) / 10;
+};
+
+const bar = ref({
+  textStyle: {
+    fontFamily: 'Inter, "Helvetica Neue", Arial, sans-serif'
+  },
+  title: {
+    text: "Traffic Sources",
+    left: "center"
+  },
+  tooltip: {
+    trigger: "item"
+    // formatter: "{a} <br/>{b} : {c} ({d}%)"
+  },
+  dataset: {
+    dimensions: ["Product", "2015", "2016", "2017"],
+    source: [
+      {
+        Product: "Matcha Latte",
+        2015: random(),
+        2016: random(),
+        2017: random()
+      },
+      {
+        Product: "Milk Tea",
+        2015: random(),
+        2016: random(),
+        2017: random()
+      },
+      {
+        Product: "Cheese Cocoa",
+        2015: random(),
+        2016: random(),
+        2017: random()
+      },
+      {
+        Product: "Walnut Brownie",
+        2015: random(),
+        2016: random(),
+        2017: random()
+      }
+    ]
+  },
+  xAxis: { type: "category" },
+  yAxis: {},
+  // Declare several bar series, each will be mapped
+  // to a column of dataset.source by default.
+  series: [{ type: "bar" }, { type: "bar" }, { type: "bar" }]
+});
 </script>
 
 <style lang="less">
@@ -148,5 +213,10 @@ const getSysInfo = () => {
       width: 30%;
     }
   }
+}
+
+.echarts {
+  width: 100%;
+  height: 300px;
 }
 </style>
