@@ -27,7 +27,7 @@ export default {
   /**
    * 启用logo图标，logo尺寸32*32，存放路径@/assets/images/logo.png
    */
-  enabledLogo: false,
+  enabledLogo: true,
 
   /**
    * 开启页面缓存
