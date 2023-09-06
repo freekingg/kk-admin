@@ -6,7 +6,7 @@
       </el-form-item>
     </el-form>
     <el-table v-loading="state.dataListLoading" :data="dataList" row-key="id" border style="width: 100%">
-      <el-table-column prop="name" :label="$t('dept.name')" header-align="center"></el-table-column>
+      <el-table-column prop="name" :label="$t('dept.name')" header-align="center" align="center"></el-table-column>
       <el-table-column prop="uniqueKey" label="部门标识" header-align="center" align="center"></el-table-column>
       <el-table-column prop="fullName" label="部门全称" header-align="center" align="center"></el-table-column>
       <el-table-column prop="type" label="部门类型" header-align="center" align="center">

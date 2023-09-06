@@ -68,6 +68,8 @@ http.interceptors.response.use(
     };
     if (error && error.response) {
       console.error("请求错误", error.response.data);
+      // 错误提示
+      ElMessage.error(error.response.data.msg);
     }
     if (status === 401) {
       redirectLogin();
