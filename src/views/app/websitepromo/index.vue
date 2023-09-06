@@ -4,9 +4,9 @@
       <el-form-item>
         <el-button @click="state.getDataList()">{{ $t("query") }}</el-button>
       </el-form-item>
-      <!--      <el-form-item>
-        <el-button v-if="state.hasPermission('app:websitepromo:save')" type="primary" @click="addOrUpdateHandle()">{{ $t("add") }}</el-button>
-      </el-form-item>-->
+      <el-form-item>
+        <el-button type="primary" @click="addOrUpdateHandle()">{{ $t("add") }}</el-button>
+      </el-form-item>
       <el-form-item>
         <el-button type="info" @click="settingUpdateHandle()">提取设置</el-button>
       </el-form-item>
