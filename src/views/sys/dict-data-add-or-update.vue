@@ -43,6 +43,7 @@ const dataForm = reactive({
   parentId: "",
   name: "",
   value: "",
+  uniqueKey: "",
   orderNum: 0,
   type: 2,
   status: 1,
@@ -63,7 +64,6 @@ const init = (row: any = {}) => {
   if (dataFormRef.value) {
     dataFormRef.value.resetFields();
   }
-
   if (row.id) {
     getInfo(row);
   }
@@ -82,6 +82,9 @@ const dataFormSubmitHandle = () => {
     }
 
     const isUpdate = !dataForm.id ? false : true;
+    if (!isUpdate) {
+      dataForm.uniqueKey = `${dataForm.parentId}-${dataForm.value}`;
+    }
     baseService.post(isUpdate ? "/config/dict/update" : "/config/dict/add", dataForm).then((res) => {
       ElMessage.success({
         message: t("prompt.success"),
